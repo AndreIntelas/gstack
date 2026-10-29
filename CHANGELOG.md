@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.91.316.0] - 2026-10-29
+
+**/ship takes a token cap and stops cleanly at it, and long runs hand their heavy segments to fresh-context children.** On gstack-evals#31 a /ship spent 54M tokens against a 25M cap because the cap was only a number in a brief; #26, whose agent read the counter after every step, stopped at 39.40M of 40M. `/ship --token-cap 25M` (or `GSTACK_SHIP_TOKEN_CAP`) now admits each step and dispatch batch only when it fits, and a run started from a long-lived context, or one whose per-call charge passes 150k at Step 7 or Step 12, runs that segment in a fresh child.
+
+### Added
+- **`gstack-ship-budget`** (`lib/ship-budget.ts`, `lib/ship-budget-cli.ts`, `lib/ship-handoff.ts`): an admission cap on a per-run token ledger under `<state root>/ship-runs/<run>/` (its own schema; only `withFileLock` is shared with `lib/spend-ledger.ts`). `start`, `check` (the `BUDGET:` line, `verdict=continue|delegate|stop`, a `RESERVATION:` id per admitted step or batch), `settle`/`release`, `handoff`/`launch`/`verify-handoff`/`return`/`reconcile`, `resume` (cap raises need `--approved-by` and the owner's words; `--rebuild-from-record`; restore from a private Drive checkpoint) and `close`. Exit 0 continue/delegate, 3 stop, 2 usage. Each meter is a versioned contract, and there are three: the Capy root counter (`--reading`), Claude Code journal usage (`lib/claude-usage.ts`, bound by `--session` or an echoed nonce) and `--meter estimate`.
+- **`gstack-review-log --start ... --reservation <id>`**: under a cap, a dispatch without an unspent, one-shot reservation refuses before launch (`BUDGET_CHECK_SKIPPED`), and `--finish` settles it. Without a cap nothing changes.
+- **/ship**: the skeleton's Budget paragraph (`--token-cap`, `--resume <record>`, `--continue <handoff>`) and a new `budget-handoff` section with the meter recipes, reservations, stop and resume, and the delegate flow per host.
+- **Result codes** `BUDGET_CAP_REACHED`, `BUDGET_READING_MISSING`, `BUDGET_READING_REJECTED`, `BUDGET_METER_UNAVAILABLE`, `BUDGET_LEDGER_INVALID`, `BUDGET_CHECK_SKIPPED`, `HANDOFF_PIN_MOVED` with docs/troubleshooting.md anchors; `lib/ship-budget-calibration.json` seeded from #19, #26 and #31.
+- **Docs**: docs/ship-budget.md (linked from docs/unattended.md), and a paragraph each in the Capy skill's SKILL.md and captain.md.
+
+### Tests
+- `test/ship-budget.test.ts`: the cap boundary, batch overshoot, the #31 replay, spend above a reservation, the no-cap path, meters and epochs, exit codes, start and segment delegation, the full handoff chain with an idempotent reconcile, moved pins and a tampered brief, refused and interrupted children, stop and RECOVER, checkpoint restore into an empty state root, ledger rebuild, concurrent ledgers, and an unchanged `gstack-wtree`.
+- `test/ship-budget-review-log.test.ts`, `test/claude-usage.test.ts`, `test/ship-budget-calibration.test.ts` (leave-one-out), `test/ship-budget-section.test.ts`.
+
 ## [1.91.315.0] - 2026-10-29
 
 ### Changed
