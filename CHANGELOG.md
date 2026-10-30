@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.91.331.0] - 2026-10-30
+
+**`/ship` and `/review` go back to the reviewers they used in 1.91.325.0, because the newer reviewers missed real blockers.** In 1.91.326.0 (#3621) each reviewer started reading one prepared packet of the diff instead of reading the diff and the code around it, and the parent read a short findings record. 1.91.330.0 (#3636) let packet reviewers read a little beyond their hunks. A replay of 14 merged PRs (GSTA-167 no-loss round 3) then showed that the old reviewers find 19 of the 30 known blockers, and the packet reviewers, even with the looser reading rule, found only 10 of those 19 (the replay's counting rule favored the old review, and the packet reviewers also found 2 blockers it missed, but the preregistered bar allowed 1 miss and they had 9). So reviews run with gstack 1.91.326.0 through 1.91.330.0 are not as thorough as the review before them, and a PR reviewed on one of those versions may still hide a blocker the old review would have caught.
+
+If you use gstack through Capy, copy `capy/skill/gstack/` over your Drive skill folder again after upgrading, because the copy from 1.91.326.0 tells `/ship` to run `gstack-review-packet`, which this release removes. A `/ship` run that started on 1.91.326.0 through 1.91.330.0 should be restarted after the upgrade for the same reason.
+
+### Removed
+- The packet reviewers: `bin/gstack-review-packet`, `lib/review-packet.ts`, `lib/review-packet-collect.ts`, `lib/review-plan-live.ts`, `lib/review-prompts.ts`, their tests, the reading rule #3636 added for packets, and the two size-ledger entries that paid for them.
+
+### Changed
+- The specialist dispatch, reviewer prompts and findings collect in `ship/sections/`, `scripts/resolvers/`, `bin/gstack-review-plan`, `lib/review-collect.ts`, `docs/review-policy.md`, `docs/ship-budget.md` and `docs/troubleshooting.md` are back to what 1.91.325.0 shipped, byte for byte. Everything else that landed since then stays, including the Capy README, the ship-queue screen change and the pregate always-run list.
+
+### Tests
+- The reviewer briefs rendered for one sample diff at 21ad261 and at 1.91.325.0 (dcd62c3) were identical when checked once by hand; no test repeats that comparison. `test/review-packet.test.ts` goes away with the code it tested, and the tests #3621 edited return to their 1.91.325.0 text.
+- `test/review-packets-removed.test.ts` (new) fails if any removed packet file comes back or any tracked file other than this CHANGELOG still names one or the packet-only anchors and codes, so a branch cut before this revert cannot merge a dangling call to them. It is on `.gstack/always-run.json`, so the selected pregate runs it on every code branch.
+
 ## [1.91.330.0] - 2026-10-30
 
 **/ship reviewers now check a suspected defect against the code it depends on before they report it or let it go.** A reviewer packet used to allow at most two more ranges of up to 200 lines, from files in the diff, in one turn. In GSTA-167's no-loss replay, 7 recorded blockers needed context outside those ranges, and no reviewer found them. Each reviewer now confirms or rules out a suspected defect by reading the callers and callees of changed functions, the tests that cover them, and the config and contracts they read. It uses grep and the read tool, at most 8 reads in at most 2 turns of parallel calls. The coverage audit keeps its own budget.
