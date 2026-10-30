@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.91.330.0] - 2026-10-30
+
+**/ship reviewers now check a suspected defect against the code it depends on before they report it or let it go.** A reviewer packet used to allow at most two more ranges of up to 200 lines, from files in the diff, in one turn. In GSTA-167's no-loss replay, 7 recorded blockers needed context outside those ranges, and no reviewer found them. Each reviewer now confirms or rules out a suspected defect by reading the callers and callees of changed functions, the tests that cover them, and the config and contracts they read. It uses grep and the read tool, at most 8 reads in at most 2 turns of parallel calls. The coverage audit keeps its own budget.
+
+### Changed
+- **Reviewer read rule** (`lib/review-prompts.ts`): `READ_BUDGET`, which every specialist, Red Team, adversarial, outside-voice and fix-check packet carries, and the packet brief (`packetBrief`), which now allows two read turns before the write.
+- `docs/review-policy.md` (reviewer packets), `capy/skill/gstack/SKILL.md` (/ship reviewers on Capy) and the generated ship sections (review-army, adversarial, test-coverage) say the same.
+
+### Tests
+- `test/review-packet.test.ts`: the batched specialist, Red Team, adversarial and fix-check packets carry the rule; the coverage audit keeps its own budget; the rule names callers, callees, tests and contracts with its read and turn bound; the Capy skill and the policy match it.
+- `test/size-ledger/ship/gsta-167-review-reads.json`: 108 bytes for the longer brief, rendered three times in the ship sections.
+
 ## [1.91.329.0] - 2026-10-30
 
 **A selected pregate now runs the whole-tree tripwires and ratchets on every code branch, so they fail before review instead of in CI.** #3592 and #3593 passed their selected gate and then failed CI on exactly these scanners, because no touched file maps to a test that reads the whole tree.
