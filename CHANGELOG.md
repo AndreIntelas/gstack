@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.91.328.0] - 2026-10-30
+
+**Most PRs no longer pay for a solo paid screen before the merge train runs the same cases.** `gstack-ship-queue ready` used to recommend `--screen` whenever a diff touched a skill's own cases, which is almost every PR, and the screens (16 to 19 a day at about $32 each) cost more than the train gates that rerun all 137 cases a few hours later. Of 41 full screens between Oct 20 and 29, the 3 that caught a real bug all came from diffs the selector can't narrow (an unknown dependency or a shared runtime input). The recommendation is now `--screen` only in that case; every other PR rides unscreened and the train gate's full census covers it. Because most PRs now ride unscreened, a train also stopped holding them back, so unscreened PRs fill the seats a screened PR leaves.
+
+### Changed
+- **Screen recommendation** (`lib/ship-queue-train-ready.ts`): `--screen` when the paid selector's mode is `full-fallback` or the selector cannot select; otherwise `--no-screen`. The `SCREEN:` lines name the selector's mode and reason.
+- **Slot order** (`lib/ship-queue-train.ts` `orderSlots`): screened PRs first, then unscreened PRs fill the remaining seats in READY order. The rule that built a screened-only train and held every unscreened PR once `max_size` of them waited is gone, along with its `HELD: … (unscreened PRs form their own train)` line. `--order` still overrides.
+- **Train replay model** (`lib/gate-cost-history.ts` `pickTrain`) seats trains the same way.
+- **Not in this change:** a focused paid run of a no-screen PR's own cases, bound to its READY receipt, needs a new `screen_policy: own` route in evals.yml (GSTA-165 1b, deferred). The matching rule 22 text in `captain/templates/CREW.md` is also deferred, as is a train-record field that attributes a red train to the PR that caused it, which the trigger for reverting this default needs (GSTA-165 v2 item 6).
+
+### Tests
+- `test/ship-queue-train-logic.test.ts`: one screened plus five unscreened at size 5 seats five; a full unscreened pool at size 3 seats three; a skill-template diff recommends `--no-screen`; a `bun.lock` diff recommends `--screen` with its full-fallback reason. These tests failed before the change. Two more pin the diffs that still screen. A diff that mixes a skill template with `bun.lock` recommends `--screen`, and a diff the selector cannot select recommends `--screen` with the full gate selection. `test/ship-queue-train.test.ts` and `test/gate-cost.test.ts` change their ordering expectations on purpose.
+
 ## [1.91.327.0] - 2026-10-30
 
 **A new page shows how gstack and Capy run as a software factory, with measured numbers.** `capy/README.md` explains how Capy Captains, their crews and gstack's skills fit together, from the plan-first approval loop and `/ship` before READY to merge trains, fix waves, the daily flaky pass and peer Captains. It compares the 14 days after 2026-10-15 with the 14 days before: 197 PRs merged to gstack's main against 65, and 194 versions shipped against 62. It also says what those numbers leave out. The median PR shrank from 1,292 changed lines to 422, and the median time from opening a PR to merging it grew from 1.1 hours to 5.6, because trains batch merges. A footnote gives the windows and the method behind every figure, and the page ends with tips and how Garry uses the setup day to day.
