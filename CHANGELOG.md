@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.91.329.0] - 2026-10-30
+
+**A selected pregate now runs the whole-tree tripwires and ratchets on every code branch, so they fail before review instead of in CI.** #3592 and #3593 passed their selected gate and then failed CI on exactly these scanners, because no touched file maps to a test that reads the whole tree.
+
+### Added
+- **`.gstack/always-run.json`** (`{ "tests": [globs] }`): whole-tree tests that join the `lanes` selection whenever a branch selects any test, owes a lane, or edits the list. `--explain` prints each as `<test> (always_run, .gstack/always-run.json)` and a glob that matches nothing as `<glob> matches no test file`. A docs-only branch adds nothing. A missing file means an empty list; a malformed one stops the check with a message naming the file. gstack's list names 15 tests (tripwires, ratchets, env-host fence conformance, free-fixtures, bun-entry-isolation, egress wiring); `host-conformance`, which runs `./setup`, stays off it.
+- docs/pregate.md has a section on the file and why it is separate from `pregate.json` (older readers reject unknown keys there).
+
+### Tests
+- `test/pregate-always-run.test.ts`: a code change adds the scanner the import graph never selects, and not without the file; a docs-only branch adds nothing; an edit to the list runs it and owes no lane; malformed lists stop; gstack's own list names only tracked tests and includes the GST-98 scanners.
+
 ## [1.91.328.0] - 2026-10-30
 
 **Most PRs no longer pay for a solo paid screen before the merge train runs the same cases.** `gstack-ship-queue ready` used to recommend `--screen` whenever a diff touched a skill's own cases, which is almost every PR, and the screens (16 to 19 a day at about $32 each) cost more than the train gates that rerun all 137 cases a few hours later. Of 41 full screens between Oct 20 and 29, the 3 that caught a real bug all came from diffs the selector can't narrow (an unknown dependency or a shared runtime input). The recommendation is now `--screen` only in that case; every other PR rides unscreened and the train gate's full census covers it. Because most PRs now ride unscreened, a train also stopped holding them back, so unscreened PRs fill the seats a screened PR leaves.
