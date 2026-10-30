@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.91.340.0] - 2026-10-30
+
+### Changed
+- **A stamped train counts a slot as merged only when GitHub reports its PR MERGED** (`lib/ship-queue-train-verify.ts`, #3603): for a stamped train, `train land` refuses to confirm a PR GitHub reports open even when main's tree is its S_i (`QUEUE_PROOF_MISSING`), and the merged count, the freeze decision and the freeze record read every slot's GitHub state instead of trusting the record's `merged` entries. Plain trains are unchanged.
+
 ## [1.91.339.0] - 2026-10-30
 
 **Merge trains can stamp every slot themselves under `changelog_fragments`: `train build` builds a stamped prefix for each slot and `train land` publishes it, so no lane stamps a PR by hand.** gstack's own policy still leaves the key off (docs/ship-policy.md#changelog-fragments).
